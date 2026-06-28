@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // API call will be added later
+      
       const response = await fetch('https://task-manager-backend-zef9.onrender.com/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -38,7 +38,7 @@ const { token, user } = data;
 
   const register = async (name, email, password) => {
     try {
-      // API call will be added later
+      
       const response = await fetch('https://task-manager-backend-zef9.onrender.com/api/auth/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
