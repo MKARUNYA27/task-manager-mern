@@ -1,7 +1,8 @@
 {
   "name": "frontend",
+  "version": "0.0.0",
   "engines": {
-  "node": "20.x"
+  "node": "24.x"
 },
   "private": true,
   "version": "0.0.0",
