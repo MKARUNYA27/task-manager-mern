@@ -18,7 +18,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       // API call will be added later
-      const fakeResponse = { data: { token: 'fake-token', user: { name: 'Test User', email } } };
+      const response = await fetch('https://task-manager-backend-zef9.onrender.com/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, password })
+});
+const data = await response.json();
+if (!response.ok) throw new Error(data.message);
+const { token, user } = data;
       const { token, user } = fakeResponse.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
@@ -32,7 +39,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     try {
       // API call will be added later
-      return { success: true, message: 'User created successfully' };
+      const response = await fetch('https://task-manager-backend-zef9.onrender.com/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name, email, password })
+});
+const data = await response.json();
+if (!response.ok) throw new Error(data.message);
+return { success: true, message: data.message };
     } catch (error) {
       return { success: false, message: 'Registration failed' };
     }
