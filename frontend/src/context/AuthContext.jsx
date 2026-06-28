@@ -1,5 +1,4 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-// import api from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -18,23 +17,24 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-     // const response = await api.post('/auth/login', { email, password });
-      const { token, user } = response.data;
+      // API call will be added later
+      const fakeResponse = { data: { token: 'fake-token', user: { name: 'Test User', email } } };
+      const { token, user } = fakeResponse.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       return { success: true };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
+      return { success: false, message: 'Login failed' };
     }
   };
 
   const register = async (name, email, password) => {
     try {
-     // const response = await api.post('/auth/register', { name, email, password });
-      return { success: true, message: response.data.message };
+      // API call will be added later
+      return { success: true, message: 'User created successfully' };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Registration failed' };
+      return { success: false, message: 'Registration failed' };
     }
   };
 
