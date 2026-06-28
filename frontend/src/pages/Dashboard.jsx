@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
+
+const API_URL = 'https://task-manager-backend-zef9.onrender.com/api';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -23,10 +24,16 @@ const Dashboard = () => {
     fetchTasks();
   }, [user]);
 
+  const getToken = () => localStorage.getItem('token');
+
   const fetchTasks = async () => {
     try {
-      const response = await api.get('/tasks');
-      setTasks(response.data);
+      const res = await fetch(`${API_URL}/tasks`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch tasks');
+      const data = await res.json();
+      setTasks(data);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -41,40 +48,62 @@ const Dashboard = () => {
       return;
     }
     try {
-      const response = await api.post('/tasks', { title, description });
-      setTasks([response.data, ...tasks]);
+      const res = await fetch(`${API_URL}/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ title, description })
+      });
+      if (!res.ok) throw new Error('Failed to create task');
+      const newTask = await res.json();
+      setTasks([newTask, ...tasks]);
       setTitle('');
       setDescription('');
-      setSuccess('Task created successfully!');
+      setSuccess('Task created!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create task');
+      setError(err.message);
       setTimeout(() => setError(''), 3000);
     }
   };
 
   const deleteTask = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
+    if (!window.confirm('Delete this task?')) return;
     try {
-      await api.delete(`/tasks/${id}`);
+      const res = await fetch(`${API_URL}/tasks/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (!res.ok) throw new Error('Failed to delete task');
       setTasks(tasks.filter(task => task._id !== id));
-      setSuccess('Task deleted successfully!');
+      setSuccess('Task deleted!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to delete task');
+      setError(err.message);
       setTimeout(() => setError(''), 3000);
     }
   };
 
   const updateTask = async (id, updatedData) => {
     try {
-      const response = await api.put(`/tasks/${id}`, updatedData);
-      setTasks(tasks.map(task => task._id === id ? response.data : task));
+      const res = await fetch(`${API_URL}/tasks/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(updatedData)
+      });
+      if (!res.ok) throw new Error('Failed to update task');
+      const updated = await res.json();
+      setTasks(tasks.map(task => task._id === id ? updated : task));
       setEditing(null);
-      setSuccess('Task updated successfully!');
+      setSuccess('Task updated!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to update task');
+      setError(err.message);
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -90,7 +119,7 @@ const Dashboard = () => {
 
   const saveEdit = (task) => {
     if (!editTitle.trim()) {
-      setError('Task title cannot be empty');
+      setError('Title cannot be empty');
       return;
     }
     updateTask(task._id, { ...task, title: editTitle });
@@ -114,7 +143,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header */}
       <header className="bg-white shadow-md sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -135,9 +163,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Toast Notifications */}
         {error && (
           <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-4 animate-slideDown">
             ❌ {error}
@@ -149,7 +175,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Add Task Form - Glass Card */}
         <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-8 border border-white/30">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">✨ Add New Task</h2>
           <form onSubmit={createTask} className="flex flex-col md:flex-row gap-4">
@@ -177,17 +202,13 @@ const Dashboard = () => {
           </form>
         </div>
 
-        {/* Task List */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            📌 Your Tasks ({tasks.length})
-          </h2>
-
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">📌 Your Tasks ({tasks.length})</h2>
           {tasks.length === 0 ? (
             <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl p-12 text-center border border-white/30">
               <span className="text-6xl block mb-4">🎯</span>
               <h3 className="text-2xl font-semibold text-gray-600">No tasks yet!</h3>
-              <p className="text-gray-400 mt-2">Create your first task above to get started.</p>
+              <p className="text-gray-400 mt-2">Create your first task above.</p>
             </div>
           ) : (
             tasks.map(task => (
@@ -212,50 +233,31 @@ const Dashboard = () => {
                             if (e.key === 'Escape') setEditing(null);
                           }}
                         />
-                        <button
-                          onClick={() => saveEdit(task)}
-                          className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditing(null)}
-                          className="bg-gray-400 text-white px-3 py-1 rounded-lg hover:bg-gray-500 transition"
-                        >
-                          Cancel
-                        </button>
+                        <button onClick={() => saveEdit(task)} className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition">Save</button>
+                        <button onClick={() => setEditing(null)} className="bg-gray-400 text-white px-3 py-1 rounded-lg hover:bg-gray-500 transition">Cancel</button>
                       </div>
                     ) : (
                       <>
-                        <h3 className={`text-lg font-semibold text-gray-800 ${
-                          task.completed ? 'line-through text-gray-500' : ''
-                        }`}>
+                        <h3 className={`text-lg font-semibold text-gray-800 ${task.completed ? 'line-through text-gray-500' : ''}`}>
                           {task.title}
                         </h3>
                         {task.description && (
-                          <p className={`text-gray-500 text-sm mt-1 ${
-                            task.completed ? 'line-through' : ''
-                          }`}>
+                          <p className={`text-gray-500 text-sm mt-1 ${task.completed ? 'line-through' : ''}`}>
                             {task.description}
                           </p>
                         )}
                         <div className="mt-2">
                           {getStatusBadge(task.completed)}
-                          <span className="text-xs text-gray-400 ml-3">
-                            🕐 {new Date(task.createdAt).toLocaleDateString()}
-                          </span>
+                          <span className="text-xs text-gray-400 ml-3">🕐 {new Date(task.createdAt).toLocaleDateString()}</span>
                         </div>
                       </>
                     )}
                   </div>
-
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={() => toggleComplete(task)}
                       className={`px-3 py-1.5 rounded-lg text-white text-sm font-medium transition transform hover:scale-105 ${
-                        task.completed
-                          ? 'bg-yellow-500 hover:bg-yellow-600'
-                          : 'bg-green-500 hover:bg-green-600'
+                        task.completed ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'
                       }`}
                     >
                       {task.completed ? '↩ Undo' : '✓ Done'}
@@ -281,7 +283,6 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="text-center text-gray-400 text-sm py-6 mt-8 border-t border-gray-200/50">
         Made with ❤️ by Karunya | MERN Task Manager
       </footer>
