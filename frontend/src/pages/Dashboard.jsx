@@ -142,30 +142,6 @@ const Dashboard = () => {
       </div>
     );
   }
-const deleteAccount = async () => {
-  // Confirm with the user
-  if (!window.confirm('⚠️ Are you sure? This will permanently delete your account and all tasks.')) return;
-
-  try {
-    const res = await fetch(`${API_URL}/users/me`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    if (res.ok) {
-      alert('✅ Account deleted successfully.');
-      logout();      // Clear local storage and auth state
-      navigate('/login'); // Redirect to login page
-    } else {
-      alert('❌ Failed to delete account.');
-    }
-  } catch (err) {
-    console.error('Delete error:', err);
-    alert('❌ Something went wrong.');
-  }
-};
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <header className="bg-white shadow-md sticky top-0 z-10">
@@ -178,18 +154,7 @@ const deleteAccount = async () => {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-gray-700 font-medium">👋 {user?.name}</span>
-            <button
-              onClick={deleteAccount}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
-            >
-              🗑️ Delete Account
-            </button>
-            <button
-              onClick={logout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition transform hover:scale-105"
-            >
-              Logout
-            </button>
+           
           </div>
         </div>
       </header>
