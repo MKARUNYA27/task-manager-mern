@@ -8,6 +8,7 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [editing, setEditing] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [error, setError] = useState('');
@@ -54,13 +55,14 @@ const Dashboard = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getToken()}`
         },
-        body: JSON.stringify({ title, description })
+        body: JSON.stringify({ title, description, dueDate })
       });
       if (!res.ok) throw new Error('Failed to create task');
       const newTask = await res.json();
       setTasks([newTask, ...tasks]);
       setTitle('');
       setDescription('');
+      setDueDate('');
       setSuccess('Task created!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -140,7 +142,30 @@ const Dashboard = () => {
       </div>
     );
   }
+const deleteAccount = async () => {
+  // Confirm with the user
+  if (!window.confirm('⚠️ Are you sure? This will permanently delete your account and all tasks.')) return;
 
+  try {
+    const res = await fetch(`${API_URL}/users/me`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (res.ok) {
+      alert('✅ Account deleted successfully.');
+      logout();      // Clear local storage and auth state
+      navigate('/login'); // Redirect to login page
+    } else {
+      alert('❌ Failed to delete account.');
+    }
+  } catch (err) {
+    console.error('Delete error:', err);
+    alert('❌ Something went wrong.');
+  }
+};
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <header className="bg-white shadow-md sticky top-0 z-10">
@@ -153,6 +178,12 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-gray-700 font-medium">👋 {user?.name}</span>
+            <button
+              onClick={deleteAccount}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              🗑️ Delete Account
+            </button>
             <button
               onClick={logout}
               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition transform hover:scale-105"
@@ -192,6 +223,12 @@ const Dashboard = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            />
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
             <button
               type="submit"
@@ -245,6 +282,16 @@ const Dashboard = () => {
                           <p className={`text-gray-500 text-sm mt-1 ${task.completed ? 'line-through' : ''}`}>
                             {task.description}
                           </p>
+                        )}
+                        {task.dueDate && (
+                          <div className="mt-2 text-sm">
+                            <span className="text-gray-500">
+                              📅 Due: {new Date(task.dueDate).toLocaleDateString()}
+                            </span>
+                            {new Date(task.dueDate) < new Date() && !task.completed && (
+                              <span className="ml-2 text-red-500 font-bold">⚠️ Overdue</span>
+                            )}
+                          </div>
                         )}
                         <div className="mt-2">
                           {getStatusBadge(task.completed)}
